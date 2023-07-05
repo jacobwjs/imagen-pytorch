@@ -979,11 +979,18 @@ class ImagenTrainer(nn.Module):
 
         total_loss = 0.
 
-        for chunk_size_frac, (chunked_args, chunked_kwargs) in split_args_and_kwargs(*args, split_size = max_batch_size, **kwargs):
-            with self.accelerator.autocast():
-                loss = self.imagen(*chunked_args, unet = self.unet_being_trained, unet_number = unet_number, **chunked_kwargs)
-                loss = loss * chunk_size_frac
+#         for chunk_size_frac, (chunked_args, chunked_kwargs) in split_args_and_kwargs(*args, split_size = max_batch_size, **kwargs):
+#             with self.accelerator.autocast():
+#                 loss = self.imagen(*chunked_args, unet = self.unet_being_trained, unet_number = unet_number, **chunked_kwargs)
+#                 loss = loss * chunk_size_frac
 
+#             total_loss += loss.item()
+
+#             if self.training:
+#                 self.accelerator.backward(loss)
+
+        with self.accelerator.autocast(), self.accelerator.accumulate(self.imagen):
+            loss = self.imagen(*args, unet = self.unet_being_trained, unet_number = unet_number, **kwargs)
             total_loss += loss.item()
 
             if self.training:
